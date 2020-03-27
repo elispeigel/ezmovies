@@ -2,30 +2,32 @@ import React, { useState } from 'react';
 import { useSpring, animated } from 'react-spring';
 import styled from 'styled-components';
 import { SearchMovie } from '../types';
+import { HEIGHT, WIDTH, GAP, WHITE, BLACK } from '../constants';
 
 interface StyleCardProps {
     poster?: string;
     index?: number;
     windowWidth?: number;
+    flipped?: boolean;
+    cardsPerRow?: number;
 }
 
 interface CardProps {
     movie: SearchMovie;
     index: number;
     windowWidth: number;
+    cardsPerRow: number;
 }
 
-const WIDTH = 300;
-const HEIGHT: number = WIDTH * 1.5;
-const calculateLeft = (width: number, index = 0, windowWidth = 0) => {
-    const calculatedIndex = index > 2 ? index % 3 : index;
-    const cardsWidth = (WIDTH * 3) + 40;
+const calculateLeft = (width: number, index = 0, windowWidth = 0, cardsPerRow = 0) => {
+    const calculatedIndex = index > cardsPerRow - 1 ? index % cardsPerRow : index;
+    const cardsWidth = (WIDTH + GAP) * cardsPerRow - GAP;
     const viewPortWidthHelper = (windowWidth - cardsWidth) / 2;
-    return (width * calculatedIndex) + viewPortWidthHelper;
+    return width * calculatedIndex + viewPortWidthHelper;
 };
 
-const calculateTop = (height: number, index = 0) => {
-    const calculatedRow = Math.floor(index / 3);
+const calculateTop = (height: number, index = 0, cardsPerRow = 0) => {
+    const calculatedRow = Math.floor(index / cardsPerRow);
     return height * calculatedRow;
 };
 
@@ -35,12 +37,13 @@ const CardHolder = styled.div`
 
 const StyledCard = styled(animated.div)<StyleCardProps>`
     position: absolute;
-    top: ${({ index }) => calculateTop(HEIGHT, index)}px;
-    left: ${({ index, windowWidth }) => calculateLeft(WIDTH, index, windowWidth)}px;
+    top: ${({ index, cardsPerRow }) => calculateTop(HEIGHT, index, cardsPerRow)}px;
+    left: ${({ index, windowWidth, cardsPerRow }) => calculateLeft(WIDTH, index, windowWidth, cardsPerRow)}px;
     background-size: cover;
     height: ${HEIGHT}px;
     width: ${WIDTH}px;
     will-change: transform, opacity;
+    cursor: ${({ flipped }) => (flipped ? `auto` : `default`)};
 `;
 
 const CardFront = styled(StyledCard)`
@@ -48,31 +51,33 @@ const CardFront = styled(StyledCard)`
 `;
 
 const CardBack = styled(StyledCard)`
-    background: black;
+    background: ${BLACK};
+    overflow-y: auto;
 `;
 
 const InfoHolder = styled.div`
     padding: 30px;
-`; 
+`;
 
 const CardTitle = styled.h1`
-    color: white;
-    font-family: LeituraW01-DisplayItalic;
+    color: ${WHITE};
+    font-family: Eskell;
     font-size: 36px;
 `;
 
 const CardOverview = styled.p`
-    color: white;
-    font-family: Leitura News;
+    color: ${WHITE};
+    font-family: Fakt;
     font-size: 14px;
 `;
 
 const CardDate = styled.p`
     color: white;
-    font-family: Leitura News;
+    font-size: 18px;
+    font-family: Fakt;
 `;
 
-const Card: React.FC<CardProps> = ({ movie, index, windowWidth }) => {
+const Card: React.FC<CardProps> = ({ movie, index, windowWidth, cardsPerRow }) => {
     const [flipped, set] = useState(false);
     const { transform, opacity } = useSpring({
         opacity: flipped ? 1 : 0,
@@ -88,12 +93,15 @@ const Card: React.FC<CardProps> = ({ movie, index, windowWidth }) => {
                     poster={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
                     index={index}
                     windowWidth={windowWidth}
+                    cardsPerRow={cardsPerRow}
                 />
             )}
             <CardBack
                 style={{ opacity, transform: transform.interpolate((t: any) => `${t} rotateX(180deg)`) }}
                 index={index}
                 windowWidth={windowWidth}
+                flipped={flipped}
+                cardsPerRow={cardsPerRow}
             >
                 <InfoHolder>
                     <CardTitle>{movie.original_title}</CardTitle>

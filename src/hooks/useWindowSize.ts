@@ -1,35 +1,33 @@
-import {useState, useLayoutEffect} from 'react'
-import {Window} from '../types'
+import { useState, useLayoutEffect } from 'react';
+import { Window } from '../types';
 
 export const useWindowSize = () => {
+    const isClient = typeof window === 'object';
 
-  const isClient = typeof window === 'object';
-
-  const getSize = (): Window => {
-    return {
-      width: isClient ? window.innerWidth : 0,
-      height: isClient ? window.innerHeight : 0
+    const getSize = (): Window => {
+        return {
+            width: isClient ? window.innerWidth : 0,
+            height: isClient ? window.innerHeight : 0,
+        };
     };
-  }
 
-  const [windowSize, setWindowSize] = useState(getSize);
+    const [windowSize, setWindowSize] = useState(getSize);
 
-  useLayoutEffect(() : any => {
-    if (!isClient) {
-      return false;
-    }
+    useLayoutEffect((): any => {
+        if (!isClient) {
+            return false;
+        }
 
-    let timeoutId: any = null;
-    
-    const resizeListener = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => setWindowSize(getSize()), 50);
-    }
+        let timeoutId: any = null;
 
+        const resizeListener = () => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => setWindowSize(getSize()), 0);
+        };
 
-    window.addEventListener('resize', resizeListener);
-    return () => window.removeEventListener('resize', resizeListener);
-  }, []);
+        window.addEventListener('resize', resizeListener);
+        return () => window.removeEventListener('resize', resizeListener);
+    }, []);
 
-  return windowSize;
-}
+    return windowSize;
+};

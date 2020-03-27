@@ -21,6 +21,6 @@ interface Genre {
 }
 
 export interface Window {
-    height: number,
-    width: number
+    height: number;
+    width: number;
 }
