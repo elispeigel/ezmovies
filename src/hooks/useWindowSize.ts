@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { Window } from '../types';
 
 export const useWindowSize = () => {
@@ -22,7 +22,7 @@ export const useWindowSize = () => {
 
         const resizeListener = () => {
             clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => setWindowSize(getSize()), 0);
+            timeoutId = setTimeout(() => setWindowSize(getSize()), 100);
         };
 
         window.addEventListener('resize', resizeListener);

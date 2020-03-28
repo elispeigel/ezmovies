@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-import Card from './components/Card';
-import { useDataApi } from './hooks/useDataApi';
-import { useWindowSize } from './hooks/useWindowSize';
-import { preQueryUrl, postQueryUrl, preFindUrl, postFindUrl, holderUrl, GAP, WIDTH } from './constants';
-import { SearchMovie, Window } from './types';
+import CardsContainer from '../components/Organisms/CardsContainer';
+import { useDataApi } from '../hooks/useDataApi';
+import { useWindowSize } from '../hooks/useWindowSize';
+import { GAP, WIDTH, holderUrl, postQueryUrl, preQueryUrl } from '../constants';
+import { SearchMovie, Window } from '../types';
 
 // Pick up notes: use data from search for flipping card. if you click on a card it expands and you can then get more data for the individual movie.
 
@@ -24,13 +24,6 @@ const SearchBar = styled.form`
 const SearchInput = styled.input`
     height: 100%;
     width: 10vw;
-`;
-
-const GridContainer = styled.div<GridContainerProps>`
-    display: grid;
-    grid-template-columns: repeat(${({ cardsPerRow }) => cardsPerRow}, max-content)};
-    grid-column-gap: ${GAP}px;
-    grid-row-gap: ${GAP}px;
 `;
 
 const App: React.FC = () => {
@@ -90,19 +83,7 @@ const App: React.FC = () => {
             {isLoadingSearch ? (
                 <div>Loading ...</div>
             ) : (
-                <GridContainer cardsPerRow={cardsPerRow}>
-                    {resultsOrHits.map((movie: SearchMovie, index: number) => {
-                        return (
-                            <Card
-                                movie={movie}
-                                index={index}
-                                key={index}
-                                windowWidth={windowWidth}
-                                cardsPerRow={cardsPerRow}
-                            />
-                        );
-                    })}
-                </GridContainer>
+                <CardsContainer cardsPerRow={cardsPerRow} movies={resultsOrHits} windowWidth={windowWidth} />
             )}
         </Layout>
     );
