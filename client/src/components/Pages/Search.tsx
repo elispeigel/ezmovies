@@ -1,32 +1,23 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import CardsContainer from '../components/Organisms/CardsContainer';
-import { useDataApi } from '../hooks/useDataApi';
-import { useWindowSize } from '../hooks/useWindowSize';
-import { GAP, WIDTH, holderUrl, postQueryUrl, preQueryUrl } from '../constants';
-import { SearchMovie, Window } from '../types';
-
-// Pick up notes: use data from search for flipping card. if you click on a card it expands and you can then get more data for the individual movie.
+import SearchBar from '../Molecules/SearchBar/SearchBar';
+import { preQueryUrl, postQueryUrl, holderUrl, WIDTH, GAP } from '../../constants';
+import CardsContainer from '../Organisms/CardsContainer';
+import { useDataApi } from '../../hooks/useDataApi';
+import { useWindowSize } from '../../hooks/useWindowSize';
+import { SearchMovie, Window } from '../../types';
 
 interface GridContainerProps {
     cardsPerRow?: number;
 }
 
-const Layout = styled.div`
+const Style = styled.div`
     display: grid;
     grid-template-rows: max-content auto;
+    grid-row-gap: ${GAP}px;
 `;
 
-const SearchBar = styled.form`
-    height: 5vh;
-`;
-
-const SearchInput = styled.input`
-    height: 100%;
-    width: 10vw;
-`;
-
-const App: React.FC = () => {
+const Search: React.FC<GridContainerProps> = () => {
     const [query, setQuery] = useState('');
     // const [ids, setIds] = useState<number[]>([]);
     // const [movies, setMovies] = useState<SearchMovie[]>([])
@@ -69,24 +60,23 @@ const App: React.FC = () => {
     const resultsOrHits: any = searchResults ? searchResults : dataSearch.hits;
 
     return (
-        <Layout>
+        <Style>
             <SearchBar
-                onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
+                submitHandler={(event: React.FormEvent<HTMLFormElement>) => {
                     doFetchSearch(`${preQueryUrl}${query}${postQueryUrl}`, { hits: [] });
                     event.preventDefault();
                 }}
-            >
-                <SearchInput type="text" value={query} onChange={(event) => setQuery(event.target.value)} />
-                <button type="submit">Search</button>
-            </SearchBar>
+                changeHandler={(event: React.ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)}
+                value={query}
+            />
             {isErrorSearch && <div>Something went wrong ...</div>}
             {isLoadingSearch ? (
                 <div>Loading ...</div>
             ) : (
                 <CardsContainer cardsPerRow={cardsPerRow} movies={resultsOrHits} windowWidth={windowWidth} />
             )}
-        </Layout>
+        </Style>
     );
 };
 
-export default App;
+export default Search;

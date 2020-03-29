@@ -7,7 +7,7 @@ interface MovieDateProps {
 
 const Style = styled.p`
     color: white;
-    font-size: 18px;
+    font-size: 20px;
     font-family: Fakt;
 `;
 

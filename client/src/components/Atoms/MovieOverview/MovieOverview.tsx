@@ -9,7 +9,7 @@ interface MovieOverviewProps {
 const Style = styled.p`
     color: ${WHITE};
     font-family: Fakt;
-    font-size: 14px;
+    font-size: 16px;
 `;
 
 const MovieOverview: React.FC<MovieOverviewProps> = ({ overview }) => {

@@ -36,7 +36,7 @@ const Card = styled(animated.div)<CardStyleProps>`
     width: ${WIDTH}px;
     will-change: transform, opacity;
     cursor: ${({ flipped }) => (flipped ? `auto` : `default`)};
-    box-shadow: 5px 5px 5px ${BLACK};
+    box-shadow: 3px 3px 3px ${BLACK};
 `;
 
 export default Card;
