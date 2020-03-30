@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /client/node_modules
+/federation/node_modules
 /.pnp
 .pnp.js
 
