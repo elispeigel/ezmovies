@@ -1,4 +1,4 @@
-export const API_KEY = '33f1d0f4af476374de4b29be55c50f24';
+export const API_KEY = '***REMOVED***';
 
 // Urls
 export const preQueryUrl = `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&language=en-US&query=`;
