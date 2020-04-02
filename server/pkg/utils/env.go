@@ -1,29 +1,33 @@
 package utils
 
 import (
-    "log"
-    "os"
-    "strconv"
+	"os"
+	"strconv"
+
+	log "github.com/elispeigel/ezmovies/server/internal/logger"
 )
 
 // MustGet will return the env or panic if it is not present
 func MustGet(k string) string {
-    v := os.Getenv(k)
-    if v == "" {
-        log.Panicln("ENV missing, key: " + k)
-    }
-    return v
+	v := os.Getenv(k)
+	if v == "" {
+		log.MissingArg(k)
+		log.Panic("ENV missing, key: " + k)
+	}
+	return v
 }
 
 // MustGetBool will return the env as boolean or panic if it is not present
 func MustGetBool(k string) bool {
-    v := os.Getenv(k)
-    if v == "" {
-        log.Panicln("ENV missing, key: " + k)
-    }
-    b, err := strconv.ParseBool(v)
-    if err != nil {
-        log.Panicln("ENV err: [" + k + "]\n" + err.Error())
-    }
-    return b
+	v := os.Getenv(k)
+	if v == "" {
+		log.MissingArg(k)
+		log.Panic("ENV missing, key: " + k)
+	}
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		log.MissingArg(k)
+		log.Panic("ENV err: [" + k + "]" + err.Error())
+	}
+	return b
 }
