@@ -1,4 +1,3 @@
-
 #!/bin/bash
 # Optional, delete the resolver to regenerate, only if there are new queries
 # or mutations, if you are just changeing the input or type definition and

@@ -1,37 +1,74 @@
 package migration
 
 import (
-    "fmt"
+	"fmt"
 
-    log "github.com/elispeigel/ezmovies/server/internal/logger"
-
-    "github.com/elispeigel/ezmovies/server/internal/orm/migration/jobs"
-    "github.com/elispeigel/ezmovies/server/internal/orm/models"
-    "github.com/jinzhu/gorm"
-    "gopkg.in/gormigrate.v1"
+	"github.com/elispeigel/ezmovies/server/internal/logger"
+	"github.com/elispeigel/ezmovies/server/internal/orm/migration/jobs"
+	"github.com/elispeigel/ezmovies/server/internal/orm/models"
+	"github.com/elispeigel/ezmovies/server/pkg/utils/consts"
+	"github.com/jinzhu/gorm"
+	"gopkg.in/gormigrate.v1"
 )
 
-func updateMigration(db *gorm.DB) error {
-	return db.AutoMigrate(
+func updateMigration(db *gorm.DB) (err error) {
+	db.AutoMigrate(
+		&models.Role{},
+		&models.Permission{},
+		&models.UserProfile{},
+		&models.UserAPIKey{},
 		&models.User{},
-	).Error
+	)
+	return addIndexes(db)
+}
+
+func addIndexes(db *gorm.DB) (err error) {
+	// Entity names
+	//db.NewScope(&models.User{}).GetModelStruct().TableName(db)
+
+	// FKs
+	if err := db.Model(&models.UserProfile{}).
+		AddForeignKey("user_id", consts.GetTableName(consts.EntityNames.Users)+"(id)", "RESTRICT", "RESTRICT").Error; err != nil {
+		return err
+	}
+	if err := db.Model(&models.UserAPIKey{}).
+		AddForeignKey("user_id", consts.GetTableName(consts.EntityNames.Users)+"(id)", "RESTRICT", "RESTRICT").Error; err != nil {
+		return err
+	}
+	if err := db.Model(&models.UserRole{}).
+		AddForeignKey("user_id", consts.GetTableName(consts.EntityNames.Users)+"(id)", "CASCADE", "CASCADE").Error; err != nil {
+		return err
+	}
+	if err := db.Model(&models.UserRole{}).
+		AddForeignKey("role_id", consts.GetTableName(consts.EntityNames.Roles)+"(id)", "CASCADE", "CASCADE").Error; err != nil {
+		return err
+	}
+	if err := db.Model(&models.UserPermission{}).
+		AddForeignKey("user_id", consts.GetTableName(consts.EntityNames.Users)+"(id)", "CASCADE", "CASCADE").Error; err != nil {
+		return err
+	}
+	if err := db.Model(&models.UserPermission{}).
+		AddForeignKey("permission_id", consts.GetTableName(consts.EntityNames.Permissions)+"(id)", "CASCADE", "CASCADE").Error; err != nil {
+		return err
+	}
+	// Indexes
+	// None needed so far
+	return nil
 }
 
 // ServiceAutoMigration migrates all the tables and modifications to the connected source
 func ServiceAutoMigration(db *gorm.DB) error {
-	// Keep a list of migrations here
+	// Initialize the migration empty so InitSchema runs always first on creation
 	m := gormigrate.New(db, gormigrate.DefaultOptions, nil)
 	m.InitSchema(func(db *gorm.DB) error {
-		log.Info("[Migration.InitSchema] Initializing database schema")
+		logger.Info("[Migration.InitSchema] Initializing database schema")
 		switch db.Dialect().GetName() {
-		case "postgres":
-			db.Exec("create extension \"uuid-ossp\";")
-
+		case consts.Dialects.PostgresSQL:
+			db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`)
 		}
 		if err := updateMigration(db); err != nil {
 			return fmt.Errorf("[Migration.InitSchema]: %v", err)
 		}
-		// Add more jobs, etc here
 		return nil
 	})
 	m.Migrate()
@@ -39,7 +76,9 @@ func ServiceAutoMigration(db *gorm.DB) error {
 	if err := updateMigration(db); err != nil {
 		return err
 	}
+	// Keep a list of migrations here
 	m = gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		jobs.SeedRBAC,
 		jobs.SeedUsers,
 	})
 	return m.Migrate()

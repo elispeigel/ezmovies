@@ -1,10 +1,57 @@
-  
+#Scalars
 scalar Time
+# Any maps to interface{}
+scalar Any
+
+# Enums
+enum LinkOperationType {
+  AND
+  OR
+}
+
+enum OperationType {
+  Equals
+  NotEquals
+  LessThan
+  LessThanEqual
+  GreaterThan
+  GreaterThanEqual
+  Is
+  IsNull
+  IsNotNull
+  In
+  NotIn
+  Like
+  ILike
+  NotLike
+  Between
+  Match
+}
+
 # Types
 type User {
   id: ID!
   email: String!
-  userId: String
+  avatarURL: String
+  name: String
+  firstName: String
+  lastName: String
+  nickName: String
+  description: String
+  location: String
+  APIkey: String
+  profiles(limit: Int = 10, offset: Int = 0): [UserProfile!]!
+  createdBy: User
+  updatedBy: User
+  createdAt: Time
+  updatedAt: Time
+}
+
+type UserProfile {
+  id: Int!
+  email: String!
+  externalUserId: String
+  avatarURL: String
   name: String
   firstName: String
   lastName: String
@@ -13,12 +60,24 @@ type User {
   location: String
   createdAt: Time!
   updatedAt: Time
+  createdBy: User
+  updatedBy: User
 }
 
 # Input Types
+
+input QueryFilter {
+  field: String!
+  linkOperation: LinkOperationType = AND
+  op: OperationType!
+  value: Any
+  values: [Any!]
+}
+
 input UserInput {
   email: String
-  userId: String
+  password: String
+  avatarURL: String
   displayName: String
   name: String
   firstName: String
@@ -26,6 +85,10 @@ input UserInput {
   nickName: String
   description: String
   location: String
+  addRoles: [ID]
+  remRoles: [ID]
+  addPermissions: [ID]
+  remPermissions: [ID]
 }
 
 # List Types
@@ -43,5 +106,12 @@ type Mutation {
 
 # Define queries here
 type Query {
-  users(id: ID): Users!
+  users(
+    id: ID
+    filters: [QueryFilter]
+    limit: Int = 50
+    offset: Int = 0
+    orderBy: String = "id"
+    sortDirection: String = "ASC"
+  ): Users!
 }

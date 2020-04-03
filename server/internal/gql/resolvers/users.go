@@ -2,8 +2,14 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 
-	log "github.com/elispeigel/ezmovies/server/internal/logger"
+	"github.com/elispeigel/ezmovies/server/internal/orm"
+	"github.com/elispeigel/ezmovies/server/pkg/utils"
+
+	"github.com/elispeigel/ezmovies/server/pkg/utils/consts"
+
+	"github.com/elispeigel/ezmovies/server/internal/logger"
 
 	"github.com/elispeigel/ezmovies/server/internal/gql/models"
 	tf "github.com/elispeigel/ezmovies/server/internal/gql/resolvers/transformations"
@@ -12,67 +18,86 @@ import (
 
 // CreateUser creates a record
 func (r *mutationResolver) CreateUser(ctx context.Context, input models.UserInput) (*models.User, error) {
-	return userCreateUpdate(r, input, false)
+	cu := getCurrentUser(ctx)
+	if ok, err := cu.HasPermission(consts.Permissions.Create, consts.EntityNames.Users); !ok || err != nil {
+		return nil, logger.Errorfn(consts.EntityNames.Users, err)
+	}
+	return userCreateUpdate(r, input, false, cu)
 }
 
 // UpdateUser updates a record
 func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input models.UserInput) (*models.User, error) {
-	return userCreateUpdate(r, input, true, id)
+	cu := getCurrentUser(ctx)
+	if ok, err := cu.HasPermission(consts.Permissions.Create, consts.EntityNames.Users); !ok || err != nil {
+		return nil, logger.Errorfn(consts.EntityNames.Users, err)
+	}
+	return userCreateUpdate(r, input, true, cu, id)
 }
 
 // DeleteUser deletes a record
 func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, error) {
+	cu := getCurrentUser(ctx)
+	if ok, err := cu.HasPermission(consts.Permissions.Delete, consts.EntityNames.Users); !ok || err != nil {
+		return false, logger.Errorfn(consts.EntityNames.Users, err)
+	}
 	return userDelete(r, id)
 }
 
 // Users lists records
-func (r *queryResolver) Users(ctx context.Context, id *string) (*models.Users, error) {
-	return userList(r, id)
+func (r *queryResolver) Users(ctx context.Context, id *string, filters []*models.QueryFilter, limit *int, offset *int, orderBy *string, sortDirection *string) (*models.Users, error) {
+	cu := getCurrentUser(ctx)
+	if ok, err := cu.HasPermission(consts.Permissions.List, consts.EntityNames.Users); !ok || err != nil {
+		return nil, logger.Errorfn(consts.EntityNames.Users, err)
+	}
+	return userList(r, id, filters, limit, offset, orderBy, sortDirection)
 }
 
 // ## Helper functions
 
-func userCreateUpdate(r *mutationResolver, input models.UserInput, update bool, ids ...string) (*models.User, error) {
-	dbo, err := tf.GQLInputUserToDBUser(&input, update, ids...)
+func userCreateUpdate(r *mutationResolver, input models.UserInput, update bool, cu *dbm.User, ids ...string) (*models.User, error) {
+	dbo, err := tf.GQLInputUserToDBUser(&input, update, cu, ids...)
 	if err != nil {
 		return nil, err
 	}
 	// Create scoped clean db interface
-	db := r.ORM.DB.New().Begin()
+	tx := r.ORM.DB.Begin()
+	defer tx.RollbackUnlessCommitted()
 	if !update {
-		db = db.Create(dbo).First(dbo) // Create the user
+		tx = tx.Create(dbo).First(dbo) // Create the user
+		if tx.Error != nil {
+			return nil, tx.Error
+		}
 	} else {
-		db = db.Model(&dbo).Update(dbo).First(dbo) // Or update it
+		tx = tx.Model(&dbo).Update(dbo).First(dbo) // Or update it
 	}
-	gql, err := tf.DBUserToGQLUser(dbo)
-	if err != nil {
-		db.RollbackUnlessCommitted()
-		return nil, err
-	}
-	db = db.Commit()
-	return gql, db.Error
+	tx = tx.Commit()
+	return tf.DBUserToGQLUser(dbo), tx.Error
 }
 
 func userDelete(r *mutationResolver, id string) (bool, error) {
-	return false, nil
+	return false, errors.New("not implemented")
 }
 
-func userList(r *queryResolver, id *string) (*models.Users, error) {
-	entity := "users"
+func userList(r *queryResolver, id *string, filters []*models.QueryFilter, limit *int, offset *int, orderBy *string, sortDirection *string) (*models.Users, error) {
 	whereID := "id = ?"
 	record := &models.Users{}
 	dbRecords := []*dbm.User{}
-	db := r.ORM.DB.New()
+	tx := r.ORM.DB.Begin().
+		Offset(*offset).Limit(*limit).Order(utils.ToSnakeCase(*orderBy) + " " + *sortDirection).
+		Preload(consts.EntityNames.UserProfiles)
 	if id != nil {
-		db = db.Where(whereID, *id)
+		tx = tx.Where(whereID, *id)
 	}
-	db = db.Find(&dbRecords).Count(&record.Count)
-	for _, dbRec := range dbRecords {
-		if rec, err := tf.DBUserToGQLUser(dbRec); err != nil {
-			log.Errorfn(entity, err)
+	if filters != nil {
+		if filtered, err := orm.ParseFilters(tx, filters); err == nil {
+			tx = filtered
 		} else {
-			record.List = append(record.List, rec)
+			return nil, err
 		}
 	}
-	return record, db.Error
+	tx = tx.Find(&dbRecords).Count(&record.Count)
+	for _, dbRec := range dbRecords {
+		record.List = append(record.List, tf.DBUserToGQLUser(dbRec))
+	}
+	return record, tx.Error
 }

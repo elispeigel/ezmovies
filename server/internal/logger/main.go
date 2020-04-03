@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -47,24 +49,42 @@ var (
 
 // Expose some log functions:
 
-// Errorfn Log errors with format
-func Errorfn(fn string, err error) {
-	logger.Errorf("[%s]: %v", fn, err)
+// Debug Log
+func Debug(args ...interface{}) {
+	logger.Debugln(args...)
+}
+
+// Debugf Log
+func Debugf(format string, args ...interface{}) {
+	logger.Debugf(format, args...)
+}
+
+// Errorfn Log errors of a [fn] with format
+func Errorfn(fn string, err error) error {
+	outerr := fmt.Errorf("[%s]: %v", fn, err)
+	logger.Errorln(outerr)
+	return outerr
 }
 
 // InvalidArg is a standard error message
-func InvalidArg(argumentName string) {
-	logger.Errorf(invalidArgMessage.message, argumentName)
+func InvalidArg(argumentName string) error {
+	outerr := fmt.Errorf(invalidArgMessage.message, argumentName)
+	logger.Errorln(outerr)
+	return outerr
 }
 
 // InvalidArgValue is a standard error message
-func InvalidArgValue(argumentName string, argumentValue string) {
-	logger.Errorf(invalidArgValueMessage.message, argumentName, argumentValue)
+func InvalidArgValue(argumentName string, argumentValue string) error {
+	outerr := fmt.Errorf(invalidArgValueMessage.message, argumentName, argumentValue)
+	logger.Errorln(outerr)
+	return outerr
 }
 
 // MissingArg is a standard error message
-func MissingArg(argumentName string) {
-	logger.Errorf(missingArgMessage.message, argumentName)
+func MissingArg(argumentName string) error {
+	outerr := fmt.Errorf(missingArgMessage.message, argumentName)
+	logger.Errorln(outerr)
+	return outerr
 }
 
 // Info Log
