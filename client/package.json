@@ -18,7 +18,7 @@
     "react-scripts": "3.4.1",
     "react-spring": "^8.0.27",
     "styled-components": "^5.0.1",
-    "typescript": "^3.9.0-beta"
+    "typescript": "^3.9.7"
   },
   "scripts": {
     "start": "react-scripts start",
